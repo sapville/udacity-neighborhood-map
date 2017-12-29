@@ -1,0 +1,28 @@
+1. Add libraries
+    a. Knockout
+    b. jQuery
+    c. jQueryUI
+2. Turn on ESLint, Stylelint
+3. Download files .eslintrc.js, .stylelintrc from OneDrive
+4. Correct the path in .stylintrc setting an absolute path to the config file
+5. Create file package.json
+6. Install gulp (globally and locally) https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md
+7. Install locally babel npm install --save-dev gulp-babel (http://babeljs.io/docs/setup/#installation (use Gulp installation))
+8. Install locally babel-core npm install --save-dev babel-core
+9. Create directory dist for converted files
+10. Create file gulpfile.js, put there the following code.
+            var gulp = require("gulp");
+            var babel = require("gulp-babel");
+
+            gulp.task("default", function () {
+              return gulp.src("js/app.js")
+                .pipe(babel())
+                .pipe(gulp.dest("dist"));
+            });
+11. Create file .babelrc
+12 Put in file .babelrc the following json code
+    {
+      "presets": ["env"]
+    }
+13. Create babel configuration npm install babel-preset-env --save-dev
+14. Run gulp command in terminal to convert js/app

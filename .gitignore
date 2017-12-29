@@ -1,1 +1,9 @@
 .eslintrc.js
+.idea
+.stylelintrc
+package.json
+node_modules
+package-lock.json
+gulpfile.js
+.babelrc
+dist
