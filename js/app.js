@@ -1,47 +1,65 @@
-// import ko from 'js/knockout-3.4.2';
-
 /*
 global
 ko
 */
 
-(function () {
-  const script = document.createElement('script');
-  script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyBOPYXNAFOVDoakdOLtdqpI71E3erG-RkQ&callback=init&v=3';
-  script.defer = true;
-  document.head.appendChild(script);
-  script.onerror = function (event) {
-    console.log('onerror', event);
-  };
-})();
+const mapStatus = {
+  MAP_LOAD_FAILURE: false,
+  MAP_LOAD_SUCCESS: true
+};
+
+const NET_ERROR_TEXT = 'Map cannot be loaded (check the network)';
+
+
+
+let app = null;
 
 class App {
-  constructor (mapLoadStatus, errorCode) {
-    this.alertVisible = ko.observable(false);
+  constructor (mapLoadStatus) {
     this.alertText = ko.observable('');
+    this.alertVisible = ko.observable(false);
     if (!mapLoadStatus) {
-      this.alertVisible(true);
-      this.alertText(`Map load error with code ${errorCode}`);
+      this.setMapLoadError(NET_ERROR_TEXT);
     }
   }
 
-  static mapStatus () {
-    return {
-      MAP_LOAD_FAILURE: false,
-      MAP_LOAD_SUCCESS: true
-    };
+  // noinspection JSUnusedGlobalSymbols
+  closeAlert () {
+    this.alertText('');
+    this.alertVisible(false);
+  }
+
+  setMapLoadError(errorText) {
+    this.loadStatus = mapStatus.MAP_LOAD_FAILURE;
+    this.alertText(errorText);
+    this.alertVisible(true);
+  }
+
+  showMap() {
+    if (!this.loadStatus) {
+      return;
+    }
+
   }
 
 }
 
+// noinspection JSUnusedGlobalSymbols
 function init () { //eslint-disable-line no-unused-vars
-  console.log('init');
+  if (!app) {
+    app = new App(mapStatus.MAP_LOAD_SUCCESS);
+    ko.applyBindings(app);
+  }
+  app.showMap();
 }
 
-function mapError (message, source, lineno, colno, error) { //eslint-disable-line no-unused-vars
-  console.log(message);
-  const app = new App(App.mapStatus().MAP_LOAD_FAILURE);
-  ko.applyBindings(app);
+function mapError () { //eslint-disable-line no-unused-vars
+  if (!app) {
+    app = new App(mapStatus.MAP_LOAD_FAILURE);
+    ko.applyBindings(app);
+  } else {
+    app.setMapLoadError(NET_ERROR_TEXT);
+  }
 }
 
-function gm_authFailure (error) { console.log('Auth error');}
+// function gm_authFailure (error) { console.log('Auth error');}

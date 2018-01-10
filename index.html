@@ -7,6 +7,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="css/bootstrap.min.css">
   <link rel="stylesheet" href="css/styles.css">
+  <script defer
+          src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBOPYXNAFOVDoakdOLtdqpI71E3erG-RkQ&callback=init&v=3"
+          onerror="mapError()"></script>
   <script src="js/jquery-3.2.1.min.js"></script>
   <script src="js/bootstrap.min.js"></script>
   <script src="js/knockout-3.4.2.js"></script>
@@ -46,6 +49,15 @@
 <!--Body-->
 
 <div class="container-fluid">
+  <div class="row">
+    <div class="col-xs-12">
+      <div class="alert alert-danger alert-dismissable" role="alert" data-bind="visible: alertVisible">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close" data-bind="click: closeAlert"><span
+            aria-hidden="true">&times;</span></button>
+        <p><strong>Error! </strong><span data-bind="text: alertText"></span></p>
+      </div>
+    </div>
+  </div>
   <div class="row">
     <div class="col-xs-4">
       <div class="list-group">
