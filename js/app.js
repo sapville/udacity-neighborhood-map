@@ -1,6 +1,6 @@
-/*
-global
-ko
+/*globals
+ko,
+google
 */
 
 const mapStatus = {
@@ -9,17 +9,21 @@ const mapStatus = {
 };
 
 const NET_ERROR_TEXT = 'Map cannot be loaded (check the network)';
+const AUTH_ERROR_TEXT = 'Map cannot be loaded (check api credentials)';
 
 
 
 let app = null;
 
 class App {
-  constructor (mapLoadStatus) {
+  constructor (mapLoadStatus, errorText) {
+    this.map = null;
     this.alertText = ko.observable('');
     this.alertVisible = ko.observable(false);
     if (!mapLoadStatus) {
-      this.setMapLoadError(NET_ERROR_TEXT);
+      this.setMapLoadError(errorText);
+    } else {
+      this.loadStatus = mapLoadStatus;
     }
   }
 
@@ -39,6 +43,15 @@ class App {
     if (!this.loadStatus) {
       return;
     }
+    this.map = new google.maps.Map(document.getElementById('map'),{
+      center: {lat: 53.344938, lng: -6.267473},
+      zoom: 15
+    });
+
+    /*TODO
+    * check if authentification carried out ok (it's processed asynchronously - maybe there is some flag)
+    * */
+
 
   }
 
@@ -55,11 +68,18 @@ function init () { //eslint-disable-line no-unused-vars
 
 function mapError () { //eslint-disable-line no-unused-vars
   if (!app) {
-    app = new App(mapStatus.MAP_LOAD_FAILURE);
+    app = new App(mapStatus.MAP_LOAD_FAILURE, NET_ERROR_TEXT);
     ko.applyBindings(app);
   } else {
     app.setMapLoadError(NET_ERROR_TEXT);
   }
 }
 
-// function gm_authFailure (error) { console.log('Auth error');}
+function gm_authFailure () { //eslint-disable-line no-unused-vars
+  if (!app) {
+    app = new App(mapStatus.MAP_LOAD_FAILURE, AUTH_ERROR_TEXT);
+    ko.applyBindings(app);
+  } else {
+    app.setMapLoadError(AUTH_ERROR_TEXT);
+  }
+}
