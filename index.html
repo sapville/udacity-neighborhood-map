@@ -34,7 +34,7 @@
 
     <div class="collapse navbar-collapse" id="cust-navbar-collapse">
       <form class="navbar-form navbar-left">
-        <div class="input-group">
+        <div class="input-group" data-bind="visible: searchVisible">
           <span class="input-group-addon" id="cust-addon-filter">Filter the list:</span>
           <input type="text" class="form-control" placeholder="e.g. Pub" id="cust-input-filter"
                  aria-describedby="cust-addon-filter">
@@ -57,13 +57,12 @@
     </div>
   </div>
   <div class="row map-container">
-    <div class="col-xs-4">
-      <div class="list-group">
-        <a href="#" class="list-group-item active">Active Item</a>
-        <a href="#" class="list-group-item">Inactive Item</a>
+    <div class="col-xs-4 no-margin list" data-bind="visible: searchVisible">
+      <div class="list-group" data-bind="foreach: locations">
+        <a href="#" class="list-group-item" data-bind="text: name"></a>
       </div>
     </div>
-    <div class="col-xs-8 map-container">
+    <div class="col-xs-8 map-container no-margin">
       <div id="map"></div>
     </div>
   </div>

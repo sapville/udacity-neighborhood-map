@@ -12,6 +12,18 @@ body,
   height: 100%;
 }
 
-.map-container {
+.list {
+  overflow-y: scroll;
+}
+
+.map-container,
+.list {
   height: 95%;
+}
+
+@media screen and (max-width: 768px) {
+  .no-margin {
+    margin: 0;
+    padding: 0;
+  }
 }
