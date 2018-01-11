@@ -11,8 +11,6 @@ const mapStatus = {
 const NET_ERROR_TEXT = 'Map cannot be loaded (check the network)';
 const AUTH_ERROR_TEXT = 'Map cannot be loaded (check api credentials)';
 
-
-
 let app = null;
 
 class App {
@@ -33,26 +31,32 @@ class App {
     this.alertVisible(false);
   }
 
-  setMapLoadError(errorText) {
+  setMapLoadError (errorText) {
     this.loadStatus = mapStatus.MAP_LOAD_FAILURE;
     this.alertText(errorText);
     this.alertVisible(true);
   }
 
-  showMap() {
+  showMap () {
     if (!this.loadStatus) {
       return;
     }
-    this.map = new google.maps.Map(document.getElementById('map'),{
+    this.map = new google.maps.Map($('#map').get(0), {
       center: {lat: 53.344938, lng: -6.267473},
       zoom: 15
     });
-
-    /*TODO
-    * check if authentification carried out ok (it's processed asynchronously - maybe there is some flag)
-    * */
-
-
+    //Since bounds are not calculated immediately searching places
+    // within bounds should be wrapped inside an event handler
+    google.maps.event.addListener(this.map, 'bounds_changed', () => {
+      google.maps.event.clearListeners(this.map, 'bounds_changed');
+      new google.maps.places.PlacesService(this.map).nearbySearch(
+        {
+          bounds: this.map.getBounds(),
+          types: ['bar', 'restaurant', 'cafe', 'night_club']
+        },
+        (results, status) => {console.log(results, status);}
+      );
+    });
   }
 
 }
