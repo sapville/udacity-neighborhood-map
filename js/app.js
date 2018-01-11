@@ -35,6 +35,17 @@ class App {
     this.alertVisible(false);
   }
 
+  showList () {
+    const list = $('.list');
+    if (list.css('z-index') === '1') { //there is only way to find out if the media-query is fulfilled
+      list.css('z-index', 2);
+      list.css('width', '25%');
+    } else {
+      list.css('z-index', 1);
+      list.css('width', '0');
+    }
+  }
+
   setMapLoadError (errorText) {
     this.loadStatus = mapStatus.MAP_LOAD_FAILURE;
     this.alertText(errorText);

@@ -1,9 +1,7 @@
 /*
-
 * {
   border: 1px solid red;
 }
-
 */
 
 html,
@@ -21,9 +19,27 @@ body,
   height: 95%;
 }
 
+.map {
+  float: right;
+}
+
 @media screen and (max-width: 768px) {
   .no-margin {
     margin: 0;
     padding: 0;
+  }
+
+  .list {
+    left: 0;
+    opacity: 0.85;
+    overflow-x: hidden;
+    position: absolute;
+    transition: 0.5s;
+    width: 0;
+    z-index: 1;
+  }
+
+  .map {
+    width: 100%;
   }
 }

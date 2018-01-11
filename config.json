@@ -395,7 +395,8 @@
   ],
   "js": [
     "alert.js",
-    "collapse.js"
+    "collapse.js",
+    "transition.js"
   ],
-  "customizerUrl": "https://getbootstrap.com/docs/3.3/customize/?id=c5b99a2adfceab0a3093af903edc9aab"
+  "customizerUrl": "https://getbootstrap.com/docs/3.3/customize/?id=4578b5c35c8217e9e5811d3230233d84"
 }
