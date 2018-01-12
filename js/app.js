@@ -25,9 +25,10 @@ class App {
     //create dependency to react on search string input
     //have to use the trick since knockoutjs doesn't seem to work with oninput event
     this.searchFunction = ko.computed(this.searchList, this);
-    this.listLength = 15;
-    this.zoom = 16;
+    this.listLength = 20;
+    this.zoom = 15;
     this.center = {lat: 53.344938, lng: -6.267473};
+    this.defaultIcon = null;
     if (!mapLoadStatus) {
       this.setMapLoadError(errorText);
     } else {
@@ -56,11 +57,63 @@ class App {
     }
   }
 
+  listItemClick (location) {
+    location.self.locationClick(location);
+  }
+
+  locationClick (location) {
+    this.animateMarker(location);
+    App.getInfoData(location)
+      .then(console.log)
+      .catch((error) => {
+        alert('Foursquare Error');
+        console.log(error);});
+  }
+
+  static getInfoData (location) {
+    const position = location.position.toJSON();
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        url: 'https://api.foursquare.com/v2/venues/search?'+
+        `ll=${position.lat},${position.lng}`+
+        `&query=${location.name}`+
+        '&limit=1'+
+        '&radius=100'+
+        '&categoryID:4d4b7105d754a06374d81259,4bf58dd8d48988d116941735'+ //cafes and restaurants, bars
+        '&client_id=1MTN4O1BQ1OHRBQKO2NPNHYRXZZEBG5QSSEND0L41NDMW51E'+
+        '&client_secret=POG3FQJYCMUH4Z24UG5GIRWXBVG5JIU1SL31QQMLUHFB2LUT'+
+        '&v=20180101',
+      }).done((data) => {
+        resolve(data.response.venues[0].name);
+      }).fail(reject);
+    });
+  }
+
+  animateMarker (location) {
+    const activeLocation = this.locations().filter((elem) => elem.active())[0];
+    if (activeLocation) {
+      activeLocation.marker.setIcon(this.defaultIcon);
+      activeLocation.active(false);
+    }
+    location.active(true);
+    location.marker.setAnimation(google.maps.Animation.DROP);
+    location.marker.setIcon({
+      path: 'M 125,5 155,90 245,90 175,145 200,230 125,180 50,230 75,145 5,90 95,90 z',
+      fillColor: 'yellow',
+      fillOpacity: 1,
+      scale: 0.1,
+      strokeColor: 'goldenrod',
+      strokeWeight: 1
+    });
+  }
+
   searchList () {
     const regex = new RegExp(this.searchString(), 'i');
     const location = this.locations.peek();
     for (let i = 0; i < location.length; i++) {
-      location[i].visible(regex.test(location[i].name));
+      let nameMatch = regex.test(location[i].name);
+      location[i].visible(nameMatch);
+      location[i].marker.setVisible(nameMatch);
     }
   }
 
@@ -83,17 +136,28 @@ class App {
         // within bounds should be wrapped inside an event handler
         google.maps.event.addListener(this.map, 'bounds_changed', () => {
           google.maps.event.clearListeners(this.map, 'bounds_changed');
+          const bounds = this.map.getBounds();
           new google.maps.places.PlacesService(this.map).textSearch(
             {
-              bounds: this.map.getBounds(),
+              bounds: bounds,
               query: 'pub'
             },
             (results, status) => {
               if (status === google.maps.places.PlacesServiceStatus.OK) {
                 for (let i = 0; i < results.length && i < this.listLength; i++) {
-                  this.addLocation(results[i]);
+                  let place = results[i];
+                  this.addLocation(place);
+                  //adjust to the viewport
+                  if (place.geometry.viewport) {
+                    bounds.union(place.geometry.viewport);
+                  } else {
+                    bounds.extend(place.geometry.location);
+                  }
+                  this.map.fitBounds(bounds);
                 }
-                this.map.setZoom(this.map.getZoom() - 1); //lessen zoom range to avoid locations on borders
+                //save a default icon to restore when clicked on another item(marker)
+                this.defaultIcon = this.locations()[0].marker.getIcon();
+                this.locationClick(this.locations()[0]);
                 resolve();
               } else {
                 reject(status);
@@ -106,15 +170,20 @@ class App {
   }
 
   addLocation (place) {
-    this.locations.push({
-      visible: ko.observable(true),
-      name: place.name,
-      location: place.geometry.location,
-      marker: new google.maps.Marker({
-        map: this.map,
-        position: place.geometry.location
-      })
+    const marker = new google.maps.Marker({
+      map: this.map,
+      position: place.geometry.location
     });
+    const location = {
+      visible: ko.observable(true),
+      active: ko.observable(false),
+      name: place.name,
+      position: place.geometry.location,
+      marker: marker,
+      self: this //to reference to the instance (this) inside a click handler
+    };
+    google.maps.event.addListener(marker, 'click', () => {this.locationClick(location);});
+    this.locations.push(location);
   }
 }
 
