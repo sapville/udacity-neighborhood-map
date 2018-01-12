@@ -20,8 +20,14 @@ class App {
     this.alertText = ko.observable('');
     this.alertVisible = ko.observable(false);
     this.searchVisible = ko.observable(false);
-    this.listLength = 20;
+    this.searchString = ko.observable();
     this.locations = ko.observableArray();
+    //create dependency to react on search string input
+    //have to use the trick since knockoutjs doesn't seem to work with oninput event
+    this.searchFunction = ko.computed(this.searchList, this);
+    this.listLength = 15;
+    this.zoom = 16;
+    this.center = {lat: 53.344938, lng: -6.267473};
     if (!mapLoadStatus) {
       this.setMapLoadError(errorText);
     } else {
@@ -35,14 +41,26 @@ class App {
     this.alertVisible(false);
   }
 
+  // noinspection JSUnusedGlobalSymbols
   showList () {
     const list = $('.list');
-    if (list.css('z-index') === '1') { //there is only way to find out if the media-query is fulfilled
-      list.css('z-index', 2);
+    //there is the only way to find out if the media-query condition is fulfilled
+    //z-index for the list is set only in media-query
+    //we cannot take width property as a criterion since jQuery returns it in pixels while z-index is easier to compare
+    if (list.css('z-index') === '1') {
+      list.css('z-index', 2); //change z-index to indicate that width was changed too
       list.css('width', '25%');
     } else {
       list.css('z-index', 1);
       list.css('width', '0');
+    }
+  }
+
+  searchList () {
+    const regex = new RegExp(this.searchString(), 'i');
+    const location = this.locations.peek();
+    for (let i = 0; i < location.length; i++) {
+      location[i].visible(regex.test(location[i].name));
     }
   }
 
@@ -58,10 +76,10 @@ class App {
         reject();
       } else {
         this.map = new google.maps.Map($('#map').get(0), {
-          center: {lat: 53.344938, lng: -6.267473},
-          zoom: 15
+          center: this.center,
+          zoom: this.zoom
         });
-        //Since bounds are not calculated immediately searching places
+        //Since bounds are not calculated immediately, searching places
         // within bounds should be wrapped inside an event handler
         google.maps.event.addListener(this.map, 'bounds_changed', () => {
           google.maps.event.clearListeners(this.map, 'bounds_changed');
@@ -75,6 +93,7 @@ class App {
                 for (let i = 0; i < results.length && i < this.listLength; i++) {
                   this.addLocation(results[i]);
                 }
+                this.map.setZoom(this.map.getZoom() - 1); //lessen zoom range to avoid locations on borders
                 resolve();
               } else {
                 reject(status);
@@ -86,9 +105,9 @@ class App {
     });
   }
 
-  addLocation(place) {
+  addLocation (place) {
     this.locations.push({
-      visible: true,
+      visible: ko.observable(true),
       name: place.name,
       location: place.geometry.location,
       marker: new google.maps.Marker({
