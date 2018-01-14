@@ -8,6 +8,11 @@ const mapStatus = {
   MAP_LOAD_SUCCESS: true
 };
 
+const fourSquareError = {
+  GET_VENUE_ERROR: 'Get venue error',
+  GET_PHOTO_ERROR: 'Get photo error'
+};
+
 const NET_ERROR_TEXT = 'Map cannot be loaded (check the network)';
 const AUTH_ERROR_TEXT = 'Map cannot be loaded (check API credentials)';
 const API_ERROR_TEXT = 'An API error occurred with status ';
@@ -63,29 +68,77 @@ class App {
 
   locationClick (location) {
     this.animateMarker(location);
-    App.getInfoData(location)
-      .then(console.log)
+    let venueInfo = null;
+    App.getVenueDetails(location)
+      .then((venue) => {
+        venueInfo = venue;
+        return App.getVenuePhoto(venue.id);
+      })
+      .then((photo) => {
+        this.showInfo(venueInfo, photo);
+      })
       .catch((error) => {
         alert('Foursquare Error');
-        console.log(error);});
+        console.log(error.name, error.message);
+      });
   }
 
-  static getInfoData (location) {
+  showInfo(venue, photo) {
+    console.log(venue, photo);
+  }
+
+  static getVenueDetails (location) {
     const position = location.position.toJSON();
+    let err = new Error();
+    err.name = fourSquareError.GET_VENUE_ERROR;
     return new Promise((resolve, reject) => {
       $.ajax({
-        url: 'https://api.foursquare.com/v2/venues/search?'+
-        `ll=${position.lat},${position.lng}`+
-        `&query=${location.name}`+
-        '&limit=1'+
-        '&radius=100'+
-        '&categoryID:4d4b7105d754a06374d81259,4bf58dd8d48988d116941735'+ //cafes and restaurants, bars
-        '&client_id=1MTN4O1BQ1OHRBQKO2NPNHYRXZZEBG5QSSEND0L41NDMW51E'+
-        '&client_secret=POG3FQJYCMUH4Z24UG5GIRWXBVG5JIU1SL31QQMLUHFB2LUT'+
+        url: 'https://api.foursquare.com/v2/venues/search?' +
+        `ll=${position.lat},${position.lng}` +
+        `&query=${location.name}` +
+        '&limit=1' +
+        '&radius=100' +
+        '&categoryID:4d4b7105d754a06374d81259,4bf58dd8d48988d116941735' + //cafes and restaurants, bars
+        '&client_id=1MTN4O1BQ1OHRBQKO2NPNHYRXZZEBG5QSSEND0L41NDMW51E' +
+        '&client_secret=POG3FQJYCMUH4Z24UG5GIRWXBVG5JIU1SL31QQMLUHFB2LUT' +
         '&v=20180101',
       }).done((data) => {
-        resolve(data.response.venues[0].name);
-      }).fail(reject);
+        if (data.meta.code === 200 && data.response.venues.length) {
+          resolve(data.response.venues[0]);
+        } else {
+          err.message = `Foursquare cannot find the venue, code ${data.meta.code}`;
+          reject(err);
+        }
+      })
+        .fail((error) => {
+          err.message = error.responseJSON.meta.errorDetail;
+          reject(err);
+        });
+    });
+  }
+
+  static getVenuePhoto (venueID) {
+    let err = new Error();
+    err.name = fourSquareError.GET_PHOTO_ERROR;
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        url: `https://api.foursquare.com/v2/venues/${venueID}/photos?` +
+        'limit=1' +
+        '&client_id=1MTN4O1BQ1OHRBQKO2NPNHYRXZZEBG5QSSEND0L41NDMW51E' +
+        '&client_secret=POG3FQJYCMUH4Z24UG5GIRWXBVG5JIU1SL31QQMLUHFB2LUT' +
+        '&v=20180101',
+      }).done((data) => {
+        if (data.meta.code === 200 && data.response.photos.count) {
+          resolve(data.response.photos.items[0]);
+        } else {
+          err.message = `Foursquare cannot a venue's photo, code ${data.meta.code}`;
+          reject(err);
+        }
+      })
+        .fail((error) => {
+          err.message = error.responseJSON.meta.errorDetail;
+          reject(err);
+        });
     });
   }
 
