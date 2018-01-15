@@ -23,6 +23,11 @@ body,
   float: right;
 }
 
+#info-img {
+  height: 300px;
+  max-width: 100%;
+}
+
 @media screen and (max-width: 768px) {
   .no-margin {
     margin: 0;

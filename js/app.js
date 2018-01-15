@@ -16,6 +16,22 @@ const fourSquareError = {
 const NET_ERROR_TEXT = 'Map cannot be loaded (check the network)';
 const AUTH_ERROR_TEXT = 'Map cannot be loaded (check API credentials)';
 const API_ERROR_TEXT = 'An API error occurred with status ';
+const FOURSQUARE_ERROR_TEXT = 'Foursquare API returned an error: ';
+const INFO_WINDOW_CONTENT = `
+    <div class="panel panel-primary">
+      <div class="panel-heading">
+        <h3 class="panel-title" id="info-header"></h3>
+        <p id="address"></p>
+      </div>
+      <div class="panel-body">
+        <img id="info-img" src="" class="img-responsive center-block img-rounded" alt="Venue's Photo">
+      </div>
+      <div class="panel-footer text-right">
+        <p>the photo was posted by <span id="author"></span></p>
+        <p>on <a href="https://foursquare.com" target="_blank">foursquare</a></p>
+      </div>
+    </div>
+`;
 
 let app = null;
 
@@ -27,6 +43,9 @@ class App {
     this.searchVisible = ko.observable(false);
     this.searchString = ko.observable();
     this.locations = ko.observableArray();
+    this.infoWindow = new google.maps.InfoWindow({
+      content: INFO_WINDOW_CONTENT
+    });
     //create dependency to react on search string input
     //have to use the trick since knockoutjs doesn't seem to work with oninput event
     this.searchFunction = ko.computed(this.searchList, this);
@@ -39,12 +58,6 @@ class App {
     } else {
       this.loadStatus = mapLoadStatus;
     }
-  }
-
-  // noinspection JSUnusedGlobalSymbols
-  closeAlert () {
-    this.alertText('');
-    this.alertVisible(false);
   }
 
   // noinspection JSUnusedGlobalSymbols
@@ -67,6 +80,7 @@ class App {
   }
 
   locationClick (location) {
+    this.showAlert(undefined, false);
     this.animateMarker(location);
     let venueInfo = null;
     App.getVenueDetails(location)
@@ -75,16 +89,22 @@ class App {
         return App.getVenuePhoto(venue.id);
       })
       .then((photo) => {
-        this.showInfo(venueInfo, photo);
+        this.showInfo(venueInfo, photo, location.marker);
       })
       .catch((error) => {
-        alert('Foursquare Error');
-        console.log(error.name, error.message);
+        this.showAlert(FOURSQUARE_ERROR_TEXT + error.message);
       });
   }
 
-  showInfo(venue, photo) {
-    console.log(venue, photo);
+  showInfo (venue, photo, marker) {
+    const firstName = photo.user.firstName || '';
+    const lastName = photo.user.lastName || '';
+    this.infoWindow.setContent(INFO_WINDOW_CONTENT); //reset the content to prevent ugly rendering
+    this.infoWindow.open(this.map, marker);
+    $('#info-header').text(venue.name);
+    $('#info-img').attr('src', photo.prefix + 'cap300' + photo.suffix);
+    $('#address').text(venue.location.address);
+    $('#author').text(firstName + ' ' + lastName);
   }
 
   static getVenueDetails (location) {
@@ -172,8 +192,12 @@ class App {
 
   setMapLoadError (errorText) {
     this.loadStatus = mapStatus.MAP_LOAD_FAILURE;
+    this.showAlert(errorText);
+  }
+
+  showAlert (errorText, show = true) {
     this.alertText(errorText);
-    this.alertVisible(true);
+    this.alertVisible(show);
   }
 
   showMap () {
@@ -210,7 +234,6 @@ class App {
                 }
                 //save a default icon to restore when clicked on another item(marker)
                 this.defaultIcon = this.locations()[0].marker.getIcon();
-                this.locationClick(this.locations()[0]);
                 resolve();
               } else {
                 reject(status);

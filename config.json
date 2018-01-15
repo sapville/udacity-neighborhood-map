@@ -385,18 +385,19 @@
     "type.less",
     "grid.less",
     "forms.less",
+    "responsive-utilities.less",
     "input-groups.less",
     "navs.less",
     "navbar.less",
     "alerts.less",
     "list-group.less",
-    "close.less",
+    "panels.less",
+    "responsive-embed.less",
     "component-animations.less"
   ],
   "js": [
-    "alert.js",
     "collapse.js",
     "transition.js"
   ],
-  "customizerUrl": "https://getbootstrap.com/docs/3.3/customize/?id=4578b5c35c8217e9e5811d3230233d84"
+  "customizerUrl": "https://getbootstrap.com/docs/3.3/customize/?id=a7983089f490a0347b0a4b0f7ddf865b"
 }
