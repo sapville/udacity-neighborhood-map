@@ -17,6 +17,9 @@ const NET_ERROR_TEXT = 'Data cannot be loaded (check the network)';
 const AUTH_ERROR_TEXT = 'Map cannot be loaded (check API credentials)';
 const API_ERROR_TEXT = 'An API error occurred with status ';
 const FOURSQUARE_ERROR_TEXT = 'Foursquare API returned an error: ';
+const SEARCH_ERROR_TEXT = 'You cannot use this symbol as a search pattern: ';
+const NO_ROUTE_ERROR_TEXT = 'There is no places to go on the map';
+
 const INFO_WINDOW_CONTENT = `
     <div class="panel panel-primary">
       <div class="panel-heading">
@@ -37,6 +40,7 @@ class App {
   constructor (mapLoadStatus, errorText) {
     this.map = null;
     this.infoWindow = null;
+    this.routeDisplay = null;
     this.alertText = ko.observable('');
     this.alertVisible = ko.observable(false);
     this.searchVisible = ko.observable(false);
@@ -71,6 +75,56 @@ class App {
     }
   }
 
+  clickRoute () {
+    this.showAlert(undefined, false);
+    if (this.infoWindow) {
+      this.resetActiveMarker();
+      this.infoWindow.close();
+      this.map.setCenter(this.center);
+    }
+    if (!this.routeDisplay) {
+      this.routeDisplay = new google.maps.DirectionsRenderer({
+        preserveViewport: true,
+        markerOptions: {
+          visible: false
+        }
+      });
+    } else {
+      this.routeDisplay.setMap(null);
+    }
+
+    const visibleLocations = this.locations().filter((elem) => elem.visible());
+    if (!visibleLocations.length) {
+      this.showAlert(NO_ROUTE_ERROR_TEXT);
+      return;
+    }
+
+    const waypoints = visibleLocations //position of all visible locations except the first(origin) and last(destination) ones
+      .slice(1, visibleLocations.length - 1)
+      .map((elem) => {
+        return {
+          location: elem.marker.getPosition()
+        };
+      });
+    new google.maps.DirectionsService().route(
+      {
+        origin: visibleLocations[0].marker.getPosition(),
+        destination: visibleLocations[visibleLocations.length - 1].marker.getPosition(),
+        travelMode: google.maps.TravelMode.WALKING,
+        waypoints: waypoints
+      },
+      (result, status) => {
+        if (status !== google.maps.DirectionsStatus.OK) {
+          this.showAlert(API_ERROR_TEXT);
+        } else {
+          this.routeDisplay.setMap(this.map);
+          this.routeDisplay.setDirections(result);
+        }
+      }
+    );
+
+  }
+
   clickListItem (location) {
     App.getViewModel().clickLocation(location);
   }
@@ -91,6 +145,7 @@ class App {
         this.showInfo(venueInfo, photo, location.marker);
       })
       .catch((error) => {
+        this.resetActiveMarker();
         this.showAlert(FOURSQUARE_ERROR_TEXT + error.message);
       });
   }
@@ -154,12 +209,16 @@ class App {
     });
   }
 
-  animateMarker (location) {
+  resetActiveMarker() {
     const activeLocation = this.locations().filter((elem) => elem.active())[0];
     if (activeLocation) {
       activeLocation.marker.setIcon(this.defaultIcon);
       activeLocation.active(false);
     }
+  }
+
+  animateMarker (location) {
+    this.resetActiveMarker();
     location.active(true);
     location.marker.setAnimation(google.maps.Animation.DROP);
     location.marker.setIcon({
@@ -186,15 +245,27 @@ class App {
       $('#address').text(venue.location.address);
       $('#author').text(firstName + ' ' + lastName);
     });
+    google.maps.event.addListener(this.infoWindow, 'closeclick', () => {
+      this.resetActiveMarker();
+      this.map.setCenter(this.center);
+    });
   }
 
   searchList () {
-    const regex = new RegExp(this.searchString(), 'i');
-    const locations = this.locations();
-    for (let i = 0; i < locations.length; i++) {
-      let nameMatch = regex.test(locations[i].name);
-      locations[i].visible(nameMatch);
-      locations[i].marker.setVisible(nameMatch);
+    this.showAlert(undefined, false);
+    if (this.routeDisplay && this.routeDisplay.getMap()) {
+      this.routeDisplay.setMap(null);
+    }
+    if (this.searchString().indexOf('\\') >= 0) {
+      this.showAlert(SEARCH_ERROR_TEXT + '\\');
+    } else {
+      const regex = new RegExp(this.searchString(), 'i');
+      const locations = this.locations();
+      for (let i = 0; i < locations.length; i++) {
+        let nameMatch = regex.test(locations[i].name);
+        locations[i].visible(nameMatch);
+        locations[i].marker.setVisible(nameMatch);
+      }
     }
   }
 
