@@ -44,7 +44,7 @@ class App {
     this.locations = ko.observableArray();
     //create dependency to react on search string input
     //have to use the trick since knockoutjs doesn't seem to work with oninput event
-    this.searchFunction = ko.computed(this.searchList, this);
+    this.searchString.subscribe(this.searchList, this);
     this.listLength = 20;
     this.zoom = 15;
     this.center = {lat: 53.344938, lng: -6.267473};
@@ -190,11 +190,11 @@ class App {
 
   searchList () {
     const regex = new RegExp(this.searchString(), 'i');
-    const location = this.locations.peek();
-    for (let i = 0; i < location.length; i++) {
-      let nameMatch = regex.test(location[i].name);
-      location[i].visible(nameMatch);
-      location[i].marker.setVisible(nameMatch);
+    const locations = this.locations();
+    for (let i = 0; i < locations.length; i++) {
+      let nameMatch = regex.test(locations[i].name);
+      locations[i].visible(nameMatch);
+      locations[i].marker.setVisible(nameMatch);
     }
   }
 
