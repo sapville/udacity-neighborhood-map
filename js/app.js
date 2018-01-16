@@ -75,6 +75,15 @@ class App {
     }
   }
 
+  clearMap (hideMarkers = true) {
+    this.locations()
+      .filter((elem) => elem.visible())
+      .forEach((elem) => {
+        elem.disabled(hideMarkers);
+        elem.marker.setVisible(!hideMarkers);
+      });
+  }
+
   clickRoute () {
     this.showAlert(undefined, false);
     if (this.infoWindow) {
@@ -84,10 +93,7 @@ class App {
     }
     if (!this.routeDisplay) {
       this.routeDisplay = new google.maps.DirectionsRenderer({
-        preserveViewport: true,
-        markerOptions: {
-          visible: false
-        }
+        preserveViewport: true
       });
     } else {
       this.routeDisplay.setMap(null);
@@ -98,6 +104,8 @@ class App {
       this.showAlert(NO_ROUTE_ERROR_TEXT);
       return;
     }
+
+    this.clearMap();
 
     const waypoints = visibleLocations //position of all visible locations except the first(origin) and last(destination) ones
       .slice(1, visibleLocations.length - 1)
@@ -111,7 +119,8 @@ class App {
         origin: visibleLocations[0].marker.getPosition(),
         destination: visibleLocations[visibleLocations.length - 1].marker.getPosition(),
         travelMode: google.maps.TravelMode.WALKING,
-        waypoints: waypoints
+        waypoints: waypoints,
+        optimizeWaypoints: true
       },
       (result, status) => {
         if (status !== google.maps.DirectionsStatus.OK) {
@@ -125,8 +134,20 @@ class App {
 
   }
 
+  clickClearRoute() {
+    if (!this.routeDisplay) {
+      return;
+    }
+
+    this.showAlert(undefined, false);
+    this.routeDisplay.setMap(null);
+    this.clearMap(false);
+  }
+
   clickListItem (location) {
-    App.getViewModel().clickLocation(location);
+    if (!location.disabled()) {
+      App.getViewModel().clickLocation(location);
+    }
   }
 
   clickLocation (location) {
@@ -209,7 +230,7 @@ class App {
     });
   }
 
-  resetActiveMarker() {
+  resetActiveMarker () {
     const activeLocation = this.locations().filter((elem) => elem.active())[0];
     if (activeLocation) {
       activeLocation.marker.setIcon(this.defaultIcon);
@@ -253,9 +274,7 @@ class App {
 
   searchList () {
     this.showAlert(undefined, false);
-    if (this.routeDisplay && this.routeDisplay.getMap()) {
-      this.routeDisplay.setMap(null);
-    }
+    this.clickClearRoute();
     if (this.searchString().indexOf('\\') >= 0) {
       this.showAlert(SEARCH_ERROR_TEXT + '\\');
     } else {
@@ -332,6 +351,7 @@ class App {
     const location = {
       visible: ko.observable(true),
       active: ko.observable(false),
+      disabled: ko.observable(false),
       name: place.name,
       position: place.geometry.location,
       marker: marker

@@ -38,10 +38,10 @@
           <span class="input-group-addon" id="cust-addon-filter">Filter the list:</span>
           <input type="text" class="form-control" placeholder="e.g. pub" id="cust-input-filter"
                  aria-describedby="cust-addon-filter" data-bind="textInput: searchString">
-          <span class="input-group-btn">
-            <button type="button" class="btn btn-default btn" data-bind="click: clickRoute">Plan your trip</button>
-          </span>
         </div>
+        <button type="button" class="btn btn-default navbar-btn" data-bind="click: clickRoute">Plan your trip</button>
+        <button type="button" class="btn btn-default navbar-btn" data-bind="click: clickClearRoute">Clear the route
+        </button>
       </form>
     </div>
   </div>
@@ -60,7 +60,7 @@
   <div class="row map-container">
     <div class="col-xs-3 no-margin list" data-bind="visible: searchVisible">
       <div class="list-group" data-bind="foreach: locations">
-        <a href="#" class="list-group-item" data-bind="text: name, visible: visible, click: $parent.clickListItem, css: { active: active() }"></a>
+        <a href="#" class="list-group-item" data-bind="text: name, visible: visible, click: $parent.clickListItem, css: { active: active() }, css: { disabled: disabled() }"></a>
       </div>
     </div>
     <div class="col-xs-9 map-container no-margin map">
