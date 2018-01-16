@@ -33,8 +33,8 @@
     </div>
 
     <div class="collapse navbar-collapse" id="cust-navbar-collapse">
-      <form class="navbar-form navbar-left">
-        <div class="input-group" data-bind="visible: searchVisible">
+      <form class="navbar-form navbar-left" data-bind="visible: searchVisible">
+        <div class="input-group">
           <span class="input-group-addon" id="cust-addon-filter">Filter the list:</span>
           <input type="text" class="form-control" placeholder="e.g. pub" id="cust-input-filter"
                  aria-describedby="cust-addon-filter" data-bind="textInput: searchString">
