@@ -13,7 +13,7 @@ const fourSquareError = {
   GET_PHOTO_ERROR: 'Get photo error'
 };
 
-const NET_ERROR_TEXT = 'Map cannot be loaded (check the network)';
+const NET_ERROR_TEXT = 'Data cannot be loaded (check the network)';
 const AUTH_ERROR_TEXT = 'Map cannot be loaded (check API credentials)';
 const API_ERROR_TEXT = 'An API error occurred with status ';
 const FOURSQUARE_ERROR_TEXT = 'Foursquare API returned an error: ';
@@ -33,19 +33,15 @@ const INFO_WINDOW_CONTENT = `
     </div>
 `;
 
-let app = null;
-
 class App {
   constructor (mapLoadStatus, errorText) {
     this.map = null;
+    this.infoWindow = null;
     this.alertText = ko.observable('');
     this.alertVisible = ko.observable(false);
     this.searchVisible = ko.observable(false);
     this.searchString = ko.observable();
     this.locations = ko.observableArray();
-    this.infoWindow = new google.maps.InfoWindow({
-      content: INFO_WINDOW_CONTENT
-    });
     //create dependency to react on search string input
     //have to use the trick since knockoutjs doesn't seem to work with oninput event
     this.searchFunction = ko.computed(this.searchList, this);
@@ -75,12 +71,15 @@ class App {
     }
   }
 
-  listItemClick (location) {
-    location.self.locationClick(location);
+  clickListItem (location) {
+    App.getViewModel().clickLocation(location);
   }
 
-  locationClick (location) {
+  clickLocation (location) {
     this.showAlert(undefined, false);
+    if (this.infoWindow) {
+      this.infoWindow.close();
+    }
     this.animateMarker(location);
     let venueInfo = null;
     App.getVenueDetails(location)
@@ -96,15 +95,8 @@ class App {
       });
   }
 
-  showInfo (venue, photo, marker) {
-    const firstName = photo.user.firstName || '';
-    const lastName = photo.user.lastName || '';
-    this.infoWindow.setContent(INFO_WINDOW_CONTENT); //reset the content to prevent ugly rendering
-    this.infoWindow.open(this.map, marker);
-    $('#info-header').text(venue.name);
-    $('#info-img').attr('src', photo.prefix + 'cap300' + photo.suffix);
-    $('#address').text(venue.location.address);
-    $('#author').text(firstName + ' ' + lastName);
+  static getViewModel () {
+    return ko.dataFor($('body').get(0));
   }
 
   static getVenueDetails (location) {
@@ -131,7 +123,7 @@ class App {
         }
       })
         .fail((error) => {
-          err.message = error.responseJSON.meta.errorDetail;
+          err.message = error.responseJSON ? error.responseJSON.meta.errorDetail : NET_ERROR_TEXT;
           reject(err);
         });
     });
@@ -156,7 +148,7 @@ class App {
         }
       })
         .fail((error) => {
-          err.message = error.responseJSON.meta.errorDetail;
+          err.message = error.responseJSON ? error.responseJSON.meta.errorDetail : NET_ERROR_TEXT;
           reject(err);
         });
     });
@@ -177,6 +169,22 @@ class App {
       scale: 0.1,
       strokeColor: 'goldenrod',
       strokeWeight: 1
+    });
+  }
+
+  showInfo (venue, photo, marker) {
+    const firstName = photo.user.firstName || '';
+    const lastName = photo.user.lastName || '';
+    if (!this.infoWindow) {
+      this.infoWindow = new google.maps.InfoWindow();
+    }
+    this.infoWindow.setContent(INFO_WINDOW_CONTENT); //reset the content to prevent ugly rendering
+    this.infoWindow.open(this.map, marker);
+    google.maps.event.addListener(this.infoWindow, 'domready', () => {
+      $('#info-header').text(venue.name);
+      $('#info-img').attr('src', photo.prefix + 'height300' + photo.suffix);
+      $('#address').text(venue.location.address);
+      $('#author').text(firstName + ' ' + lastName);
     });
   }
 
@@ -255,19 +263,19 @@ class App {
       active: ko.observable(false),
       name: place.name,
       position: place.geometry.location,
-      marker: marker,
-      self: this //to reference to the instance (this) inside a click handler
+      marker: marker
     };
-    google.maps.event.addListener(marker, 'click', () => {this.locationClick(location);});
+    google.maps.event.addListener(marker, 'click', () => {this.clickLocation(location);});
     this.locations.push(location);
   }
 }
 
 // noinspection JSUnusedGlobalSymbols
 function init () { //eslint-disable-line no-unused-vars
+  let app = App.getViewModel();
   if (!app) {
     app = new App(mapStatus.MAP_LOAD_SUCCESS);
-    ko.applyBindings(app);
+    ko.applyBindings(app, $('body').get(0));
   }
   //Before show the search field wait until the map is loaded without errors
   app.showMap()
@@ -276,9 +284,10 @@ function init () { //eslint-disable-line no-unused-vars
 }
 
 function mapError () { //eslint-disable-line no-unused-vars
+  let app = App.getViewModel();
   if (!app) {
     app = new App(mapStatus.MAP_LOAD_FAILURE, NET_ERROR_TEXT);
-    ko.applyBindings(app);
+    ko.applyBindings(app, $('body').get(0));
   } else {
     app.setMapLoadError(NET_ERROR_TEXT);
   }
@@ -286,9 +295,10 @@ function mapError () { //eslint-disable-line no-unused-vars
 
 // noinspection JSUnusedGlobalSymbols
 function gm_authFailure () { //eslint-disable-line no-unused-vars
+  let app = App.getViewModel();
   if (!app) {
     app = new App(mapStatus.MAP_LOAD_FAILURE, AUTH_ERROR_TEXT);
-    ko.applyBindings(app);
+    ko.applyBindings(app, $('body').get(0));
   } else {
     app.setMapLoadError(AUTH_ERROR_TEXT);
   }
