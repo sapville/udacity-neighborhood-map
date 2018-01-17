@@ -9,7 +9,6 @@ ko,
 google
 */
 
-
 var mapStatus = {
   MAP_LOAD_FAILURE: false,
   MAP_LOAD_SUCCESS: true
@@ -29,25 +28,38 @@ var NO_ROUTE_ERROR_TEXT = 'There is no places to go on the map';
 
 var INFO_WINDOW_CONTENT = '\n    <div class="panel panel-primary">\n      <div class="panel-heading">\n        <h3 class="panel-title" id="info-header"></h3>\n        <p id="address"></p>\n      </div>\n      <div class="panel-body">\n        <img id="info-img" src="" class="img-responsive center-block img-rounded" alt="Venue\'s Photo">\n      </div>\n      <div class="panel-footer text-right">\n        <p>the photo was posted by <span id="author"></span></p>\n        <p>on <a href="https://foursquare.com" target="_blank">foursquare</a></p>\n      </div>\n    </div>\n';
 
+/**
+ * ViewModel class for KnockoutJS framework
+ */
+
 var App = function () {
+  /**
+   * constructor
+   * @param {object} mapLoadStatus  - the map load result
+   * @param {string} errorText      - error text if error occurred
+   */
   function App(mapLoadStatus, errorText) {
     _classCallCheck(this, App);
 
+    /*Attributes*/
     this.map = null;
     this.infoWindow = null;
     this.routeDisplay = null;
-    this.alertText = ko.observable('');
-    this.alertVisible = ko.observable(false);
-    this.searchVisible = ko.observable(false);
-    this.searchString = ko.observable();
-    this.locations = ko.observableArray();
+    this.alertText = ko.observable(''); //error text shown in an alert block
+    this.alertVisible = ko.observable(false); //if an alert block visible
+    this.searchVisible = ko.observable(false); //if a search field visible
+    this.searchString = ko.observable(); //the search string value (a search criterion)
+    this.locations = ko.observableArray(); //an array with locations (markers and list items)
+    this.listLength = 20; //maximum number of locations
+    this.zoom = 15; //initial zoom for the area where locations are to be found
+    this.center = { lat: 53.344938, lng: -6.267473 }; //place to search locations (Temple Bar, Dublin, Ireland)
+    this.bounds = null; //bounds to center the map when a route is drawn
+    this.defaultIcon = null; //save default icon to replace a selected icon (a star)
+
+    /*Initialization*/
     //create dependency to react on search string input
     //have to use the trick since knockoutjs doesn't seem to work with oninput event
     this.searchString.subscribe(this.searchList, this);
-    this.listLength = 20;
-    this.zoom = 15;
-    this.center = { lat: 53.344938, lng: -6.267473 };
-    this.defaultIcon = null;
     if (!mapLoadStatus) {
       this.setMapLoadError(errorText);
     } else {
@@ -55,7 +67,10 @@ var App = function () {
     }
   }
 
-  // noinspection JSUnusedGlobalSymbols
+  // noinspection JSMethodCanBeStatic
+  /**
+   * handle click on hamburger button - show/hide a list with locations on the sidebar
+   */
 
 
   _createClass(App, [{
@@ -66,13 +81,21 @@ var App = function () {
       //z-index for the list is set only in media-query
       //we cannot take width property as a criterion since jQuery returns it in pixels while z-index is easier to compare
       if (list.css('z-index') === '1') {
+        //show the list
         list.css('z-index', 2); //change z-index to indicate that width was changed too
         list.css('width', '25%');
       } else {
+        //hide the list
         list.css('z-index', 1);
         list.css('width', '0');
       }
     }
+
+    /**
+     * hide/show markers on the map (when the route is drawn) - process only those ones which were selected via filtering
+     * @param {boolean} hideMarkers - hide or shoe markers
+     */
+
   }, {
     key: 'clearMap',
     value: function clearMap() {
@@ -85,16 +108,21 @@ var App = function () {
         elem.marker.setVisible(!hideMarkers);
       });
     }
+
+    /**
+     * draw the route through the locations selected via filtering
+     */
+
   }, {
     key: 'clickRoute',
     value: function clickRoute() {
       var _this = this;
 
-      this.showAlert(undefined, false);
+      //prepare the map
+      this.showAlert(undefined, false); //hide an alert block if shown
       if (this.infoWindow) {
         this.resetActiveMarker();
         this.infoWindow.close();
-        this.map.setCenter(this.center);
       }
       if (!this.routeDisplay) {
         this.routeDisplay = new google.maps.DirectionsRenderer({
@@ -104,6 +132,7 @@ var App = function () {
         this.routeDisplay.setMap(null);
       }
 
+      //find locations to be connected
       var visibleLocations = this.locations().filter(function (elem) {
         return elem.visible();
       });
@@ -112,14 +141,20 @@ var App = function () {
         return;
       }
 
+      //clear the map
       this.clearMap();
+      this.map.fitBounds(this.bounds);
 
+      //find locations to be used as waypoints
       var waypoints = visibleLocations //position of all visible locations except the first(origin) and last(destination) ones
-      .slice(1, visibleLocations.length - 1).map(function (elem) {
+      .slice(1, visibleLocations.length - 1) //except the first and the last ones
+      .map(function (elem) {
         return {
           location: elem.marker.getPosition()
         };
       });
+
+      //draw the route
       new google.maps.DirectionsService().route({
         origin: visibleLocations[0].marker.getPosition(),
         destination: visibleLocations[visibleLocations.length - 1].marker.getPosition(),
@@ -135,6 +170,11 @@ var App = function () {
         }
       });
     }
+
+    /**
+     * erase the route from the map
+     */
+
   }, {
     key: 'clickClearRoute',
     value: function clickClearRoute() {
@@ -146,6 +186,13 @@ var App = function () {
       this.routeDisplay.setMap(null);
       this.clearMap(false);
     }
+
+    // noinspection JSMethodCanBeStatic
+    /**
+     * item click handler
+     * @param {object} location - clicked list item
+     */
+
   }, {
     key: 'clickListItem',
     value: function clickListItem(location) {
@@ -153,6 +200,12 @@ var App = function () {
         App.getViewModel().clickLocation(location);
       }
     }
+
+    /**
+     * process click on a location - either on a list item or a marker
+     * @param {object} location - clicked location
+     */
+
   }, {
     key: 'clickLocation',
     value: function clickLocation(location) {
@@ -164,18 +217,31 @@ var App = function () {
       }
       this.animateMarker(location);
       var venueInfo = null;
-      App.getVenueDetails(location).then(function (venue) {
+      App.searchFoursquareVenue(location) //ajax call
+      .then(function (venue) {
         venueInfo = venue;
-        return App.getVenuePhoto(venue.id);
+        return App.getFoursquareVenuePhoto(venue.id); //ajax call
       }).then(function (photo) {
+        //show the info only after two consecutive successful ajax calls
         _this2.showInfo(venueInfo, photo, location.marker);
       }).catch(function (error) {
         _this2.resetActiveMarker();
         _this2.showAlert(FOURSQUARE_ERROR_TEXT + error.message);
       });
     }
+
+    /**
+     * get ViewModel instance
+     * @returns {object} - ViewModel instance
+     */
+
   }, {
     key: 'resetActiveMarker',
+
+
+    /**
+     * reset a clicked (active) marker, which has a star shape, to a default icont
+     */
     value: function resetActiveMarker() {
       var activeLocation = this.locations().filter(function (elem) {
         return elem.active();
@@ -185,14 +251,20 @@ var App = function () {
         activeLocation.active(false);
       }
     }
+
+    /**
+     * transform a clicked marker into a star and bounce
+     * @param {object} location - clicked location
+     */
+
   }, {
     key: 'animateMarker',
     value: function animateMarker(location) {
       this.resetActiveMarker();
-      location.active(true);
+      location.active(true); //indicate that the marker is clicked (active)
       location.marker.setAnimation(google.maps.Animation.DROP);
       location.marker.setIcon({
-        path: 'M 125,5 155,90 245,90 175,145 200,230 125,180 50,230 75,145 5,90 95,90 z',
+        path: 'M 125,5 155,90 245,90 175,145 200,230 125,180 50,230 75,145 5,90 95,90 z', //the star shape is taken from Google reference
         fillColor: 'yellow',
         fillOpacity: 1,
         scale: 0.1,
@@ -200,18 +272,27 @@ var App = function () {
         strokeWeight: 1
       });
     }
+
+    /**
+     * show an info window with a photo, an address and a photo author's name
+     * @param {object} venue - venue data from Foursquare
+     * @param {object} photo - photo data from Foursquare
+     * @param {object} marker - the marker to attach the info window to
+     */
+
   }, {
     key: 'showInfo',
     value: function showInfo(venue, photo, marker) {
       var _this3 = this;
 
-      var firstName = photo.user.firstName || '';
+      var firstName = photo.user.firstName || ''; //in case the name is missing
       var lastName = photo.user.lastName || '';
       if (!this.infoWindow) {
         this.infoWindow = new google.maps.InfoWindow();
       }
       this.infoWindow.setContent(INFO_WINDOW_CONTENT); //reset the content to prevent ugly rendering
       this.infoWindow.open(this.map, marker);
+      //cannot fill the window until DOM is rendered
       google.maps.event.addListener(this.infoWindow, 'domready', function () {
         $('#info-header').text(venue.name);
         $('#info-img').attr('src', photo.prefix + 'height300' + photo.suffix);
@@ -220,18 +301,24 @@ var App = function () {
       });
       google.maps.event.addListener(this.infoWindow, 'closeclick', function () {
         _this3.resetActiveMarker();
-        _this3.map.setCenter(_this3.center);
       });
     }
+
+    /**
+     * filter the list of locations and hide markers on the map
+     * this function is a subscription to the change of search string field
+     */
+
   }, {
     key: 'searchList',
     value: function searchList() {
-      this.showAlert(undefined, false);
+      this.showAlert(undefined, false); //hide alert box if shown
       this.clickClearRoute();
       if (this.searchString().indexOf('\\') >= 0) {
+        //symbol \ cannot be used in regexp
         this.showAlert(SEARCH_ERROR_TEXT + '\\');
       } else {
-        var regex = new RegExp(this.searchString(), 'i');
+        var regex = new RegExp(this.searchString(), 'i'); //use regexp to ignore register in a search string
         var locations = this.locations();
         for (var i = 0; i < locations.length; i++) {
           var nameMatch = regex.test(locations[i].name);
@@ -240,12 +327,25 @@ var App = function () {
         }
       }
     }
+
+    /**
+     * process load map errors
+     * @param {string} errorText - text to show inside the alert box
+     */
+
   }, {
     key: 'setMapLoadError',
     value: function setMapLoadError(errorText) {
       this.loadStatus = mapStatus.MAP_LOAD_FAILURE;
       this.showAlert(errorText);
     }
+
+    /**
+     * show the alert box
+     * @param {string} errorText - text to shwow in the alert box
+     * @param {boolean} show - show/hide the alert box
+     */
+
   }, {
     key: 'showAlert',
     value: function showAlert(errorText) {
@@ -254,6 +354,12 @@ var App = function () {
       this.alertText(errorText);
       this.alertVisible(show);
     }
+
+    /**
+     * show the map when fully loaded
+     * @returns {Promise} have to use asynchronous processing since we wait until event bounds_changed occurs
+     */
+
   }, {
     key: 'showMap',
     value: function showMap() {
@@ -271,9 +377,10 @@ var App = function () {
           // within bounds should be wrapped inside an event handler
           google.maps.event.addListener(_this4.map, 'bounds_changed', function () {
             google.maps.event.clearListeners(_this4.map, 'bounds_changed');
-            var bounds = _this4.map.getBounds();
-            new google.maps.places.PlacesService(_this4.map).textSearch({
-              bounds: bounds,
+            _this4.bounds = _this4.map.getBounds();
+            new google.maps.places.PlacesService(_this4.map).textSearch( //find locations to show
+            {
+              bounds: _this4.bounds,
               query: 'pub'
             }, function (results, status) {
               if (status === google.maps.places.PlacesServiceStatus.OK) {
@@ -282,11 +389,11 @@ var App = function () {
                   _this4.addLocation(place);
                   //adjust to the viewport
                   if (place.geometry.viewport) {
-                    bounds.union(place.geometry.viewport);
+                    _this4.bounds.union(place.geometry.viewport);
                   } else {
-                    bounds.extend(place.geometry.location);
+                    _this4.bounds.extend(place.geometry.location);
                   }
-                  _this4.map.fitBounds(bounds);
+                  _this4.map.fitBounds(_this4.bounds);
                 }
                 //save a default icon to restore when clicked on another item(marker)
                 _this4.defaultIcon = _this4.locations()[0].marker.getIcon();
@@ -299,6 +406,12 @@ var App = function () {
         }
       });
     }
+
+    /**
+     * collect locations into an array "locations"
+     * @param {object} place - location to show
+     */
+
   }, {
     key: 'addLocation',
     value: function addLocation(place) {
@@ -326,16 +439,23 @@ var App = function () {
     value: function getViewModel() {
       return ko.dataFor($('body').get(0));
     }
+
+    /**
+     * search Foursquare for a venue by name and LanLng position
+     * @param {object} location - clicked location (a member of locations array)
+     * @returns {Promise} - to chain with another ajax call
+     */
+
   }, {
-    key: 'getVenueDetails',
-    value: function getVenueDetails(location) {
+    key: 'searchFoursquareVenue',
+    value: function searchFoursquareVenue(location) {
       var position = location.position.toJSON();
       var err = new Error();
       err.name = fourSquareError.GET_VENUE_ERROR;
       return new Promise(function (resolve, reject) {
         $.ajax({
           url: 'https://api.foursquare.com/v2/venues/search?' + ('ll=' + position.lat + ',' + position.lng) + ('&query=' + location.name) + '&limit=1' + '&radius=100' + '&categoryID:4d4b7105d754a06374d81259,4bf58dd8d48988d116941735' + //cafes and restaurants, bars
-          '&client_id=1MTN4O1BQ1OHRBQKO2NPNHYRXZZEBG5QSSEND0L41NDMW51E' + '&client_secret=POG3FQJYCMUH4Z24UG5GIRWXBVG5JIU1SL31QQMLUHFB2LUT' + '&v=20180101'
+          '&client_id=1MTN4O1BQ1OHRBQKO2NPNHYRXZZEBG5QSSEND0L41NDMW51E' + '&client_secret=POG3FQJYCMUH4Z24UG5GIRWXBVG5JIU1SL31QQMLUHFB2LUT' + '&v=20180101' //date by which api finds an actual version
         }).done(function (data) {
           if (data.meta.code === 200 && data.response.venues.length) {
             resolve(data.response.venues[0]);
@@ -344,14 +464,22 @@ var App = function () {
             reject(err);
           }
         }).fail(function (error) {
+          //error can be returned either by api or ajax (net error)
           err.message = error.responseJSON ? error.responseJSON.meta.errorDetail : NET_ERROR_TEXT;
           reject(err);
         });
       });
     }
+
+    /**
+     * find a photo on Foursquare by venue id
+     * @param {string} venueID - venue id
+     * @returns {Promise} to show info asynchronously
+     */
+
   }, {
-    key: 'getVenuePhoto',
-    value: function getVenuePhoto(venueID) {
+    key: 'getFoursquareVenuePhoto',
+    value: function getFoursquareVenuePhoto(venueID) {
       var err = new Error();
       err.name = fourSquareError.GET_PHOTO_ERROR;
       return new Promise(function (resolve, reject) {
@@ -365,6 +493,7 @@ var App = function () {
             reject(err);
           }
         }).fail(function (error) {
+          //error can be returned either by api or ajax (net error)
           err.message = error.responseJSON ? error.responseJSON.meta.errorDetail : NET_ERROR_TEXT;
           reject(err);
         });
@@ -376,12 +505,17 @@ var App = function () {
 }();
 
 // noinspection JSUnusedGlobalSymbols
+/**
+ * function called asynchronously after Google API loaded successfully
+ * the function is passed as a callback parameter in Google API URL
+ */
 
 
 function init() {
   //eslint-disable-line no-unused-vars
   var app = App.getViewModel();
   if (!app) {
+    //in case app has been already created asynchronously by other callback function
     app = new App(mapStatus.MAP_LOAD_SUCCESS);
     ko.applyBindings(app, $('body').get(0));
   }
@@ -393,10 +527,16 @@ function init() {
   });
 }
 
+// noinspection JSUnusedGlobalSymbols
+/**
+ * function called asynchronously when an error occurs during Google API loading
+ * the function is passed as an attribute in <script> tag loading Google API
+ */
 function mapError() {
   //eslint-disable-line no-unused-vars
   var app = App.getViewModel();
   if (!app) {
+    //in case app has been already created asynchronously by other callback function
     app = new App(mapStatus.MAP_LOAD_FAILURE, NET_ERROR_TEXT);
     ko.applyBindings(app, $('body').get(0));
   } else {
@@ -405,10 +545,14 @@ function mapError() {
 }
 
 // noinspection JSUnusedGlobalSymbols
+/**
+ * function called when there is a problem with Google API key
+ */
 function gm_authFailure() {
   //eslint-disable-line no-unused-vars
   var app = App.getViewModel();
   if (!app) {
+    //in case app has been already created asynchronously by other callback function
     app = new App(mapStatus.MAP_LOAD_FAILURE, AUTH_ERROR_TEXT);
     ko.applyBindings(app, $('body').get(0));
   } else {
