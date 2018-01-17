@@ -89,7 +89,6 @@ class App {
     if (this.infoWindow) {
       this.resetActiveMarker();
       this.infoWindow.close();
-      this.map.setCenter(this.center);
     }
     if (!this.routeDisplay) {
       this.routeDisplay = new google.maps.DirectionsRenderer({
@@ -268,7 +267,6 @@ class App {
     });
     google.maps.event.addListener(this.infoWindow, 'closeclick', () => {
       this.resetActiveMarker();
-      this.map.setCenter(this.center);
     });
   }
 
