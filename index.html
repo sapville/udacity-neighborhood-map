@@ -60,7 +60,7 @@
   <div class="row map-container">
     <div class="col-xs-3 no-margin list" data-bind="visible: searchVisible">
       <div class="list-group" data-bind="foreach: locations">
-        <a href="#" class="list-group-item" data-bind="text: name, visible: visible, click: $parent.clickListItem, css: { active: active() }, css: { disabled: disabled() }"></a>
+        <a href="#" class="list-group-item" data-bind="text: name, visible: visible, click: $parent.clickListItem, css: { active: active(), disabled: disabled() }"></a>
       </div>
     </div>
     <div class="col-xs-9 map-container no-margin map">
