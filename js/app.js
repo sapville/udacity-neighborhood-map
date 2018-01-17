@@ -52,6 +52,7 @@ class App {
     this.listLength = 20;
     this.zoom = 15;
     this.center = {lat: 53.344938, lng: -6.267473};
+    this.bounds = null;
     this.defaultIcon = null;
     if (!mapLoadStatus) {
       this.setMapLoadError(errorText);
@@ -105,6 +106,7 @@ class App {
     }
 
     this.clearMap();
+    this.map.fitBounds(this.bounds);
 
     const waypoints = visibleLocations //position of all visible locations except the first(origin) and last(destination) ones
       .slice(1, visibleLocations.length - 1)
@@ -309,10 +311,10 @@ class App {
         // within bounds should be wrapped inside an event handler
         google.maps.event.addListener(this.map, 'bounds_changed', () => {
           google.maps.event.clearListeners(this.map, 'bounds_changed');
-          const bounds = this.map.getBounds();
+          this.bounds = this.map.getBounds();
           new google.maps.places.PlacesService(this.map).textSearch(
             {
-              bounds: bounds,
+              bounds: this.bounds,
               query: 'pub'
             },
             (results, status) => {
@@ -322,11 +324,11 @@ class App {
                   this.addLocation(place);
                   //adjust to the viewport
                   if (place.geometry.viewport) {
-                    bounds.union(place.geometry.viewport);
+                    this.bounds.union(place.geometry.viewport);
                   } else {
-                    bounds.extend(place.geometry.location);
+                    this.bounds.extend(place.geometry.location);
                   }
-                  this.map.fitBounds(bounds);
+                  this.map.fitBounds(this.bounds);
                 }
                 //save a default icon to restore when clicked on another item(marker)
                 this.defaultIcon = this.locations()[0].marker.getIcon();
