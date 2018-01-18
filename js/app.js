@@ -20,22 +20,6 @@ const FOURSQUARE_ERROR_TEXT = 'Foursquare API returned an error: ';
 const SEARCH_ERROR_TEXT = 'You cannot use this symbol as a search pattern: ';
 const NO_ROUTE_ERROR_TEXT = 'There is no places to go on the map';
 
-const INFO_WINDOW_CONTENT = `
-    <div class="panel panel-primary">
-      <div class="panel-heading">
-        <h3 class="panel-title" id="info-header"></h3>
-        <p id="address"></p>
-      </div>
-      <div class="panel-body">
-        <img id="info-img" src="" class="img-responsive center-block img-rounded" alt="Venue's Photo">
-      </div>
-      <div class="panel-footer text-right">
-        <p>the photo was posted by <span id="author"></span></p>
-        <p>on <a href="https://foursquare.com" target="_blank">foursquare</a></p>
-      </div>
-    </div>
-`;
-
 /**
  * ViewModel class for KnockoutJS framework
  */
@@ -54,6 +38,11 @@ class App {
     this.alertVisible = ko.observable(false); //if an alert block visible
     this.searchVisible = ko.observable(false);//if a search field visible
     this.searchString = ko.observable();      //the search string value (a search criterion)
+    this.venueName = ko.observable();         //venue name in the info window
+    this.venueAddress = ko.observable();      //venue address in the info window
+    this.venuePhoto = ko.observable();        //venue photo in the info window
+    this.photoAuthor = ko.observable();       //venue photo author in the info window
+    this.hideInfo = ko.observable(true);      //if the info window is hidden
     this.locations = ko.observableArray();    //an array with locations (markers and list items)
     this.listLength = 20;                     //maximum number of locations
     this.zoom = 15;                           //initial zoom for the area where locations are to be found
@@ -71,7 +60,6 @@ class App {
       this.loadStatus = mapLoadStatus;
     }
   }
-
 
   // noinspection JSMethodCanBeStatic
   /**
@@ -165,7 +153,7 @@ class App {
   /**
    * erase the route from the map
    */
-  clickClearRoute() {
+  clickClearRoute () {
     if (!this.routeDisplay) {
       return;
     }
@@ -324,16 +312,14 @@ class App {
     const lastName = photo.user.lastName || '';
     if (!this.infoWindow) {
       this.infoWindow = new google.maps.InfoWindow();
+      this.infoWindow.setContent($('.panel').get(0));
+      this.hideInfo(false);
     }
-    this.infoWindow.setContent(INFO_WINDOW_CONTENT); //reset the content to prevent ugly rendering
     this.infoWindow.open(this.map, marker);
-    //cannot fill the window until DOM is rendered
-    google.maps.event.addListener(this.infoWindow, 'domready', () => {
-      $('#info-header').text(venue.name);
-      $('#info-img').attr('src', photo.prefix + 'height300' + photo.suffix);
-      $('#address').text(venue.location.address);
-      $('#author').text(firstName + ' ' + lastName);
-    });
+    this.venueName(venue.name);
+    this.venuePhoto(photo.prefix + 'height300' + photo.suffix);
+    this.venueAddress(venue.location.address);
+    this.photoAuthor(firstName + ' ' + lastName);
     google.maps.event.addListener(this.infoWindow, 'closeclick', () => {
       this.resetActiveMarker();
     });

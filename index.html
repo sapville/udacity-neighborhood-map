@@ -70,6 +70,23 @@
     </div>
   </div>
 </div>
+
+<!--Info-window-->
+
+<div class="panel panel-primary hidden" data-bind="css: { hidden: hideInfo() }">
+  <div class="panel-heading">
+    <h3 class="panel-title" data-bind="text: venueName"></h3>
+    <p data-bind="text: venueAddress"></p>
+  </div>
+  <div class="panel-body">
+    <img id="info-img" class="img-responsive center-block img-rounded" alt="Venue's Photo" data-bind="attr: { src: venuePhoto }">
+  </div>
+  <div class="panel-footer text-right">
+    <p>the photo was posted by <span data-bind="photoAuthor"></span></p>
+    <p>on <a href="https://foursquare.com" target="_blank">foursquare</a></p>
+  </div>
+</div>
+
 </body>
 
 </html>

@@ -26,8 +26,6 @@ var FOURSQUARE_ERROR_TEXT = 'Foursquare API returned an error: ';
 var SEARCH_ERROR_TEXT = 'You cannot use this symbol as a search pattern: ';
 var NO_ROUTE_ERROR_TEXT = 'There is no places to go on the map';
 
-var INFO_WINDOW_CONTENT = '\n    <div class="panel panel-primary">\n      <div class="panel-heading">\n        <h3 class="panel-title" id="info-header"></h3>\n        <p id="address"></p>\n      </div>\n      <div class="panel-body">\n        <img id="info-img" src="" class="img-responsive center-block img-rounded" alt="Venue\'s Photo">\n      </div>\n      <div class="panel-footer text-right">\n        <p>the photo was posted by <span id="author"></span></p>\n        <p>on <a href="https://foursquare.com" target="_blank">foursquare</a></p>\n      </div>\n    </div>\n';
-
 /**
  * ViewModel class for KnockoutJS framework
  */
@@ -49,6 +47,11 @@ var App = function () {
     this.alertVisible = ko.observable(false); //if an alert block visible
     this.searchVisible = ko.observable(false); //if a search field visible
     this.searchString = ko.observable(); //the search string value (a search criterion)
+    this.venueName = ko.observable(); //venue name in the info window
+    this.venueAddress = ko.observable(); //venue address in the info window
+    this.venuePhoto = ko.observable(); //venue photo in the info window
+    this.photoAuthor = ko.observable(); //venue photo author in the info window
+    this.hideInfo = ko.observable(true); //if the info window is hidden
     this.locations = ko.observableArray(); //an array with locations (markers and list items)
     this.listLength = 20; //maximum number of locations
     this.zoom = 15; //initial zoom for the area where locations are to be found
@@ -289,16 +292,14 @@ var App = function () {
       var lastName = photo.user.lastName || '';
       if (!this.infoWindow) {
         this.infoWindow = new google.maps.InfoWindow();
+        this.infoWindow.setContent($('.panel').get(0));
+        this.hideInfo(false);
       }
-      this.infoWindow.setContent(INFO_WINDOW_CONTENT); //reset the content to prevent ugly rendering
       this.infoWindow.open(this.map, marker);
-      //cannot fill the window until DOM is rendered
-      google.maps.event.addListener(this.infoWindow, 'domready', function () {
-        $('#info-header').text(venue.name);
-        $('#info-img').attr('src', photo.prefix + 'height300' + photo.suffix);
-        $('#address').text(venue.location.address);
-        $('#author').text(firstName + ' ' + lastName);
-      });
+      this.venueName(venue.name);
+      this.venuePhoto(photo.prefix + 'height300' + photo.suffix);
+      this.venueAddress(venue.location.address);
+      this.photoAuthor(firstName + ' ' + lastName);
       google.maps.event.addListener(this.infoWindow, 'closeclick', function () {
         _this3.resetActiveMarker();
       });

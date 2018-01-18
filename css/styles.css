@@ -24,16 +24,15 @@ body,
 }
 
 #info-img {
-  height: 290px;
+  height: 300px;
   max-width: 100%;
 }
 
-@media screen and (max-width: 768px) {
-  .no-margin {
-    margin: 0;
-    padding: 0;
-  }
+.panel {
+  margin: 0;
+}
 
+@media screen and (max-width: 768px) {
   .list {
     left: 0;
     opacity: 0.85;
@@ -48,15 +47,20 @@ body,
     width: 100%;
   }
 
-  .navbar {
-    margin: 0;
-  }
-
   .map-container {
     height: 98%;
   }
 
   .panel {
     max-width: 290px;
+  }
+
+  .no-margin {
+    margin: 0;
+    padding: 0;
+  }
+
+  .navbar {
+    margin: 0;
   }
 }
