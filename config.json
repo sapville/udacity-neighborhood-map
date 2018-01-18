@@ -118,7 +118,7 @@
     "@screen-xs": "480px",
     "@screen-xs-min": "@screen-xs",
     "@screen-phone": "@screen-xs-min",
-    "@screen-sm": "768px",
+    "@screen-sm": "769px",
     "@screen-sm-min": "@screen-sm",
     "@screen-tablet": "@screen-sm-min",
     "@screen-md": "992px",
@@ -400,5 +400,5 @@
     "collapse.js",
     "transition.js"
   ],
-  "customizerUrl": "https://getbootstrap.com/docs/3.3/customize/?id=79647b061f265eea0bac91ee86b2353d"
+  "customizerUrl": "https://getbootstrap.com/docs/3.3/customize/?id=df1aabd58b9d161f0f32cd4445c97193"
 }
