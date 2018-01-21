@@ -59,13 +59,13 @@
       </div>
     </div>
   </div>
-  <div class="row map-container">
-    <div class="col-xs-3 no-margin list" data-bind="visible: searchVisible">
+  <div class="row max-height">
+    <div class="col-xs-3 no-margin list max-height" data-bind="visible: searchVisible">
       <div class="list-group" data-bind="foreach: locations">
         <a href="#" class="list-group-item" data-bind="text: name, visible: visible, click: $parent.clickListItem, css: { active: active(), disabled: disabled() }"></a>
       </div>
     </div>
-    <div class="col-xs-9 map-container no-margin map">
+    <div class="col-xs-9 max-height no-margin map">
       <div id="map"></div>
     </div>
   </div>

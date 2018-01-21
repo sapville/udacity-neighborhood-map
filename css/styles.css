@@ -6,17 +6,30 @@
 
 html,
 body,
-#map {
+#map,
+.max-height {
   height: 100%;
+}
+
+.no-margin {
+  margin: 0;
+  padding: 0;
+}
+
+.navbar {
+  margin: 0;
+}
+
+.navbar-header {
+  margin-top: 8px;
 }
 
 .list {
   overflow-y: scroll;
 }
 
-.map-container,
-.list {
-  height: 95%;
+.map-container {
+  height: 91%;
 }
 
 .map {
@@ -55,12 +68,9 @@ body,
     max-width: 290px;
   }
 
-  .no-margin {
-    margin: 0;
-    padding: 0;
-  }
-
-  .navbar {
-    margin: 0;
+  #info-img {
+    height: 200px;
   }
 }
+
+
