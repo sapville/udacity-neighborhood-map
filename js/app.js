@@ -224,8 +224,8 @@ class App {
         '&limit=1' +
         '&radius=100' +
         '&categoryID:4d4b7105d754a06374d81259,4bf58dd8d48988d116941735' + //cafes and restaurants, bars
-        '&client_id=1MTN4O1BQ1OHRBQKO2NPNHYRXZZEBG5QSSEND0L41NDMW51E' +
-        '&client_secret=POG3FQJYCMUH4Z24UG5GIRWXBVG5JIU1SL31QQMLUHFB2LUT' +
+        '&client_id=NTHMHUF3XOETEGPBBXQZNWAEDPW2CNMSAYFN2SNXVUSPLRU5' +
+        '&client_secret=Z51XRJPKOWS1IQVJ3DXOZY5Y2415HXTW0PFDCR02ZQAZKP04' +
         '&v=20180101', //date by which api finds an actual version
       }).done((data) => {
         if (data.meta.code === 200 && data.response.venues.length) {
@@ -254,8 +254,8 @@ class App {
       $.ajax({
         url: `https://api.foursquare.com/v2/venues/${venueID}/photos?` +
         'limit=1' +
-        '&client_id=1MTN4O1BQ1OHRBQKO2NPNHYRXZZEBG5QSSEND0L41NDMW51E' +
-        '&client_secret=POG3FQJYCMUH4Z24UG5GIRWXBVG5JIU1SL31QQMLUHFB2LUT' +
+        '&client_id=NTHMHUF3XOETEGPBBXQZNWAEDPW2CNMSAYFN2SNXVUSPLRU5' +
+        '&client_secret=Z51XRJPKOWS1IQVJ3DXOZY5Y2415HXTW0PFDCR02ZQAZKP04' +
         '&v=20180101',
       }).done((data) => {
         if (data.meta.code === 200 && data.response.photos.count) {
